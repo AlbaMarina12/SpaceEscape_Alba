@@ -4,30 +4,66 @@ using UnityEngine;
 public class PlayerController2D : MonoBehaviour
 {
     public float speed = 6f;
+    public float fallGravity = 2.5f;
+    public float boostForce = 6f;
 
     private Rigidbody2D rb;
     private Vector2 input;
     private Animator anim;
+    private bool hasCrashed = false;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+
+        // Al inicio no cae
+        rb.gravityScale = 0f;
     }
 
     void Update()
     {
-        input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+        if (!hasCrashed)
+        {
+            input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
 
-        bool moving = input.sqrMagnitude > 0.001f;
-        if (anim != null)
-            anim.SetBool("isMoving", moving);
+            bool moving = input.sqrMagnitude > 0.001f;
+            if (anim != null)
+                anim.SetBool("isMoving", moving);
+        }
+        else
+        {
+            // Ya no tiene movimiento libre después del choque
+            input = Vector2.zero;
+
+            if (anim != null)
+                anim.SetBool("isMoving", false);
+
+            // Space funciona como impulso / "salto"
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+                rb.AddForce(Vector2.up * boostForce, ForceMode2D.Impulse);
+            }
+        }
     }
 
     void FixedUpdate()
     {
-        rb.linearVelocity = input * speed;
-        ClampToCamera();
+        if (!hasCrashed)
+        {
+            rb.linearVelocity = input * speed;
+            ClampToCamera();
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Obstacle"))
+        {
+            hasCrashed = true;
+            rb.gravityScale = fallGravity;
+        }
     }
 
     void ClampToCamera()
