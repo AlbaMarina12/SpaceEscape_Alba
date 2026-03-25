@@ -7,6 +7,8 @@ public class PlayerController2D : MonoBehaviour
     public float fallGravity = 2.5f;
     public float boostForce = 6f;
 
+    public GameObject explosionPrefab; // 💥 NUEVO
+
     private Rigidbody2D rb;
     private Vector2 input;
     private Animator anim;
@@ -39,7 +41,7 @@ public class PlayerController2D : MonoBehaviour
             if (anim != null)
                 anim.SetBool("isMoving", false);
 
-            // Space funciona como impulso / "salto"
+            // Space funciona como impulso después del choque (lo conservamos)
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
@@ -59,11 +61,37 @@ public class PlayerController2D : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Obstacle"))
+        if (collision.gameObject.CompareTag("Obstacle") && !hasCrashed)
         {
-            hasCrashed = true;
-            rb.gravityScale = fallGravity;
+            Crash();
         }
+    }
+
+    void Crash()
+    {
+        hasCrashed = true;
+
+        // Activa gravedad para que caiga
+        rb.gravityScale = fallGravity;
+
+        // 💥 Explosión
+        if (explosionPrefab != null)
+        {
+            Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+        }
+
+        // ⏱ Espera 1 segundo antes de mostrar Game Over
+        Invoke("ShowGameOver", 1f);
+    }
+
+    void ShowGameOver()
+    {
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.ShowGameOver();
+        }
+
+        gameObject.SetActive(false); // oculta la nave
     }
 
     void ClampToCamera()
