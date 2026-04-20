@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,14 +19,36 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        UpdateScore();
         gameOverPanel.SetActive(false);
+        UpdateScore();
+
+        // Espera a que Firebase esté listo antes de cargar el score guardado
+        StartCoroutine(WaitForFirebaseAndLoad());
+    }
+
+    IEnumerator WaitForFirebaseAndLoad()
+    {
+        while (FirebaseManager.Instance == null || !FirebaseManager.Instance.IsFirebaseReady)
+        {
+            yield return null;
+        }
+
+        score = FirebaseManager.Instance.totalCoins;
+        UpdateScore();
+        Debug.Log("Score cargado desde Firebase: " + score);
     }
 
     public void AddScore(int amount)
     {
         score += amount;
         UpdateScore();
+
+        // Guardar score en Firebase
+        if (FirebaseManager.Instance != null && FirebaseManager.Instance.IsFirebaseReady)
+        {
+            FirebaseManager.Instance.totalCoins = score;
+            FirebaseManager.Instance.SaveProgress();
+        }
     }
 
     void UpdateScore()
@@ -45,4 +68,4 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-}
+}   
