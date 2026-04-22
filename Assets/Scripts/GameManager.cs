@@ -7,10 +7,13 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
+    [Header("Score")]
     public int score = 0;
     public TextMeshProUGUI scoreText;
-    public GameObject gameOverPanel;
     public TextMeshProUGUI finalScoreText;
+
+    [Header("UI")]
+    public GameObject gameOverPanel;
 
     void Awake()
     {
@@ -19,10 +22,15 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        gameOverPanel.SetActive(false);
+        Time.timeScale = 1f;
+
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(false);
+        }
+
         UpdateScore();
 
-        // Espera a que Firebase esté listo antes de cargar el score guardado
         StartCoroutine(WaitForFirebaseAndLoad());
     }
 
@@ -43,7 +51,6 @@ public class GameManager : MonoBehaviour
         score += amount;
         UpdateScore();
 
-        // Guardar score en Firebase
         if (FirebaseManager.Instance != null && FirebaseManager.Instance.IsFirebaseReady)
         {
             FirebaseManager.Instance.totalCoins = score;
@@ -53,13 +60,24 @@ public class GameManager : MonoBehaviour
 
     void UpdateScore()
     {
-        scoreText.text = "Score: " + score;
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + score;
+        }
     }
 
     public void ShowGameOver()
     {
-        gameOverPanel.SetActive(true);
-        finalScoreText.text = "Score: " + score;
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+        }
+
+        if (finalScoreText != null)
+        {
+            finalScoreText.text = "Score: " + score;
+        }
+
         Time.timeScale = 0f;
     }
 
@@ -68,4 +86,4 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-}   
+}
